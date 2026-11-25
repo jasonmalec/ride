@@ -79,6 +79,9 @@ ol.blocks li:first-child{border-top:1px solid var(--rule)}
 .sheet{display:none;position:fixed;inset:0;background:rgba(18,53,43,.45);z-index:20;align-items:flex-end;justify-content:center}
 .sheet.on{display:flex}
 .sheet .card{background:var(--porcelain);width:100%;max-width:560px;max-height:88vh;overflow:auto;border-radius:20px 20px 0 0;padding:22px 20px calc(24px + env(safe-area-inset-bottom))}
+.sheet .done{margin-top:22px}
+body.sheet-open{overflow:hidden}
+@media (min-width:600px){.sheet{align-items:center;padding:24px}.sheet .card{border-radius:20px;max-height:84vh;padding-bottom:24px}}
 .sheet h3{font:500 26px/1.15 var(--display);margin:0 0 14px}
 .sheet .close{float:right}
 .steps{margin:0 0 16px;padding-left:1.3em}
@@ -86,6 +89,8 @@ ol.blocks li:first-child{border-top:1px solid var(--rule)}
 .pick{display:flex;justify-content:space-between;align-items:center;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--rule);padding:14px 0}
 .pick span{color:var(--mute);font-size:14px}
 .field{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:12px 0;border-bottom:1px solid var(--rule)}
+.field>span{white-space:nowrap;flex:0 0 auto}
+.sheet h2{margin-top:24px}
 .field select{border:0;border-bottom:1.5px solid var(--brass);background:transparent;padding:6px 2px;font-weight:600;font-size:16px}
 
 /* Ride */
@@ -261,6 +266,7 @@ body.riding{background:var(--pine);color:#F3F6F2}
   <div class="field"><label for="cMaxP">Highest power the trainer may set</label><span><input class="num" id="cMaxP" type="number" inputmode="numeric"> watts</span></div>
   <div class="field"><label for="cMinP">Lowest power the trainer may set</label><span><input class="num" id="cMinP" type="number" inputmode="numeric"> watts</span></div>
   <div class="field"><label for="cResp">How quickly resistance reacts</label><select id="cResp"><option value="gentle">Gently</option><option value="normal">Normally</option><option value="fast">Quickly</option></select></div>
+  <button class="btn solid wide done" data-close>Done</button>
 </div></div>
 
 <script id="core">
@@ -600,8 +606,8 @@ if (typeof module !== 'undefined') module.exports = Core;
   });
 
   // Sheets
-  function closeSheets() { document.querySelectorAll('.sheet').forEach(function (s) { s.classList.remove('on'); }); }
-  document.querySelectorAll('[data-open]').forEach(function (b) { b.addEventListener('click', function () { if (b.dataset.open === 'library') renderLibrary(); if (b.dataset.open === 'numbers') fillNumbers(); $(b.dataset.open).classList.add('on'); }); });
+  function closeSheets() { document.querySelectorAll('.sheet').forEach(function (s) { s.classList.remove('on'); }); document.body.classList.remove('sheet-open'); }
+  document.querySelectorAll('[data-open]').forEach(function (b) { b.addEventListener('click', function () { if (b.dataset.open === 'library') renderLibrary(); if (b.dataset.open === 'numbers') fillNumbers(); $(b.dataset.open).classList.add('on'); document.body.classList.add('sheet-open'); }); });
   document.querySelectorAll('.sheet').forEach(function (s) { s.addEventListener('click', function (ev) { if (ev.target === s || ev.target.closest('[data-close]')) { closeSheets(); renderBlocks(); fillNumbers(); } }); });
 
   // ---------- Bluetooth ----------
