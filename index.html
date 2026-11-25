@@ -115,6 +115,8 @@ body.riding{background:var(--pine);color:#F3F6F2}
 .stats div+div{border-left:1px solid var(--pine-2)}
 .stats b{display:block;font:600 22px/1.2 var(--ui);font-variant-numeric:tabular-nums}
 .stats span{font-size:12px;color:var(--night-mute)}
+.key{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--night-mute);margin-top:6px}
+.key i{display:inline-block;width:16px;height:2px;vertical-align:middle;margin-right:6px}
 #rideWarn{display:none;border:1px solid var(--peach);color:#FFE3D4;border-radius:12px;padding:10px 12px;font-size:15px;margin-bottom:14px}
 .ctl{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
 .ctl button{background:var(--pine-2);border:0;color:#F3F6F2;border-radius:14px;min-height:58px;font-weight:600;font-size:16px}
@@ -203,7 +205,8 @@ body.riding{background:var(--pine);color:#F3F6F2}
     <div><b id="rBlk">--</b><span>block left</span></div>
     <div><b id="rTot">--</b><span>total left</span></div>
   </div>
-  <svg class="chart" id="rideChart" viewBox="0 0 600 230" role="img" aria-label="Heart rate against target"></svg>
+  <svg class="chart" id="rideChart" viewBox="0 0 600 230" role="img" aria-label="Heart rate and power against target"></svg>
+  <div class="key"><span><i style="background:#F3F6F2"></i>Heart rate</span><span><i style="background:#D9BC7A"></i>Target</span><span><i style="background:#A8BBB1;opacity:.6;height:1px"></i>Power, watts on the right</span></div>
   <div class="ctl">
     <button id="btnDown">Target down 1</button>
     <button id="btnUp">Target up 1</button>
@@ -534,34 +537,45 @@ if (typeof module !== 'undefined') module.exports = Core;
 
   // ---------- Charts ----------
   var W = 600, H = 230, PAD = { l: 44, r: 8, t: 12, b: 30 };
-  function scale(plan, extra) {
+  function scale(plan, extra, R) {
+    R = R || PAD.r;
     var lo = 999, hi = 0;
     plan.segs.forEach(function (s) { lo = Math.min(lo, s.from, s.to); hi = Math.max(hi, s.from, s.to); });
     (extra || []).forEach(function (v) { lo = Math.min(lo, v); hi = Math.max(hi, v); });
     lo = Math.floor((lo - 8) / 10) * 10; hi = Math.ceil((hi + 8) / 10) * 10;
     return {
       lo: lo, hi: hi,
-      x: function (t) { return PAD.l + (W - PAD.l - PAD.r) * (plan.total ? t / plan.total : 0); },
+      x: function (t) { return PAD.l + (W - PAD.l - R) * (plan.total ? t / plan.total : 0); },
       y: function (v) { return PAD.t + (H - PAD.t - PAD.b) * (1 - (v - lo) / (hi - lo)); }
     };
   }
   function chartSvg(plan, dark, hrPts, cursorT) {
     if (!plan.segs.length) return '';
     var c = dark ? { grid: '#1B4638', text: '#A8BBB1', line: '#D9BC7A', fill: 'rgba(217,188,122,.10)', hr: '#F3F6F2' } : { grid: '#D5D9D2', text: '#66716B', line: '#12352B', fill: 'rgba(18,53,43,.07)', hr: '#A9853C' };
-    var sc = scale(plan, hrPts ? hrPts.map(function (p) { return p[1]; }) : null), out = '', base = H - PAD.b;
+    var pw = hrPts ? hrPts.filter(function (p) { return p[2] != null; }) : [];
+    var R = hrPts ? 46 : PAD.r;
+    var sc = scale(plan, hrPts ? hrPts.map(function (p) { return p[1]; }) : null, R), out = '', base = H - PAD.b;
     var stepV = (sc.hi - sc.lo) > 60 ? 20 : 10;
     for (var v = sc.lo; v <= sc.hi; v += stepV) {
-      out += '<line x1="' + PAD.l + '" x2="' + (W - PAD.r) + '" y1="' + sc.y(v) + '" y2="' + sc.y(v) + '" stroke="' + c.grid + '" stroke-width="1"/>';
+      out += '<line x1="' + PAD.l + '" x2="' + (W - R) + '" y1="' + sc.y(v) + '" y2="' + sc.y(v) + '" stroke="' + c.grid + '" stroke-width="1"/>';
       out += '<text x="' + (PAD.l - 6) + '" y="' + (sc.y(v) + 4) + '" fill="' + c.text + '" font-size="17" text-anchor="end" font-family="Hanken Grotesk,sans-serif">' + v + '</text>';
     }
     var pts = [];
     plan.segs.forEach(function (s) { pts.push(sc.x(s.start).toFixed(1) + ',' + sc.y(s.from).toFixed(1)); pts.push(sc.x(s.end).toFixed(1) + ',' + sc.y(s.to).toFixed(1)); });
-    out += '<polygon fill="' + c.fill + '" points="' + PAD.l + ',' + base + ' ' + pts.join(' ') + ' ' + (W - PAD.r) + ',' + base + '"/>';
+    out += '<polygon fill="' + c.fill + '" points="' + PAD.l + ',' + base + ' ' + pts.join(' ') + ' ' + (W - R) + ',' + base + '"/>';
     out += '<polyline fill="none" stroke="' + c.line + '" stroke-width="2.5" stroke-linejoin="round" points="' + pts.join(' ') + '"/>';
     var every = plan.total > 5400 ? 1800 : plan.total > 1800 ? 600 : 300;
     for (var t = 0; t <= plan.total; t += every) {
       var anchor = t === 0 ? 'start' : (plan.total - t < every * 0.4 ? 'end' : 'middle');
       out += '<text x="' + sc.x(t) + '" y="' + (H - 6) + '" fill="' + c.text + '" font-size="17" text-anchor="' + anchor + '" font-family="Hanken Grotesk,sans-serif">' + Math.round(t / 60) + (t === 0 ? ' min' : '') + '</text>';
+    }
+    if (pw.length > 1) {
+      // Power: a faint line on its own scale, labelled on the right.
+      var pMax = 150; pw.forEach(function (p) { pMax = Math.max(pMax, p[2]); });
+      pMax = Math.ceil(pMax * 1.1 / 50) * 50;
+      var py = function (w) { return base - (base - PAD.t) * Math.max(0, w) / pMax; };
+      out += '<polyline fill="none" stroke="' + c.text + '" stroke-opacity=".55" stroke-width="1.2" stroke-linejoin="round" points="' + pw.map(function (p) { return sc.x(p[0]).toFixed(1) + ',' + py(p[2]).toFixed(1); }).join(' ') + '"/>';
+      [pMax / 2, pMax].forEach(function (w) { out += '<text x="' + (W - R + 6) + '" y="' + (py(w) + 5) + '" fill="' + c.text + '" fill-opacity=".8" font-size="14" font-family="Hanken Grotesk,sans-serif">' + Math.round(w) + 'w</text>'; });
     }
     if (hrPts && hrPts.length > 1) out += '<polyline fill="none" stroke="' + c.hr + '" stroke-width="2" stroke-linejoin="round" points="' + hrPts.map(function (p) { return sc.x(p[0]).toFixed(1) + ',' + sc.y(p[1]).toFixed(1); }).join(' ') + '"/>';
     if (cursorT != null) out += '<line x1="' + sc.x(cursorT) + '" x2="' + sc.x(cursorT) + '" y1="' + PAD.t + '" y2="' + base + '" stroke="' + c.hr + '" stroke-width="1" stroke-dasharray="3 4"/>';
@@ -721,7 +735,7 @@ if (typeof module !== 'undefined') module.exports = Core;
     ride = {
       plan: Core.expand(blocks), ctrl: new Core.Controller(cfg), sim: demo ? new Core.Sim() : null, demo: demo,
       elapsed: 0, last: Date.now(), paused: false, bias: 0, pts: [], lastPt: -99, lastSent: null, lastSentAt: 0,
-      idleSince: null, overCeil: false, cmd: null, n: 0, inBand: 0, sumHr: 0, sumP: 0, nP: 0
+      idleSince: null, overCeil: false, cmd: null, n: 0, inBand: 0, sumHr: 0, sumP: 0, nP: 0, pAcc: 0, pAccN: 0
     };
     if (demo) { live.hr = 88; live.hrAt = Date.now(); live.power = 80; live.powerAt = Date.now(); }
     $('btnPause').textContent = 'Pause';
@@ -764,8 +778,8 @@ if (typeof module !== 'undefined') module.exports = Core;
     }
     if (running && hrFresh) {
       r.n += dt; r.sumHr += live.hr * dt; if (Math.abs(live.hr - target) <= 3) r.inBand += dt;
-      if (live.power != null) { r.sumP += live.power * dt; r.nP += dt; }
-      if (r.elapsed - r.lastPt >= 5) { r.pts.push([r.elapsed, live.hr]); r.lastPt = r.elapsed; }
+      if (live.power != null) { r.sumP += live.power * dt; r.nP += dt; r.pAcc += live.power * dt; r.pAccN += dt; }
+      if (r.elapsed - r.lastPt >= 5) { r.pts.push([r.elapsed, live.hr, r.pAccN ? r.pAcc / r.pAccN : null]); r.lastPt = r.elapsed; r.pAcc = 0; r.pAccN = 0; }
     }
     return warn;
   }
