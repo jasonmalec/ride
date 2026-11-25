@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#12352B">
+<title>ATL Cycling: Heart Rate Trainer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,500;6..96,600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --porcelain:#F4F5F1; --paper:#FFFFFF; --ink:#16201C; --mute:#66716B; --rule:#D5D9D2;
+  --pine:#12352B; --pine-2:#1B4638; --brass:#A9853C; --brass-lt:#D9BC7A;
+  --mint:#9FD8B8; --peach:#F2A07B; --sky:#A9C4E8; --night-mute:#A8BBB1;
+  --display:"Bodoni Moda","Didot","Bodoni 72",Georgia,serif;
+  --ui:"Hanken Grotesk",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--porcelain);color:var(--ink);font:400 16px/1.5 var(--ui)}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+.screen{display:none;max-width:560px;margin:0 auto;padding:20px 20px 120px}
+.screen.on{display:block}
+.mark{font-family:var(--display);font-weight:600;font-size:22px;letter-spacing:.01em;line-height:1}
+.mark small{display:block;font:500 13px/1.3 var(--ui);color:var(--mute);margin-top:5px;letter-spacing:0}
+.top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px}
+.link{background:none;border:0;padding:8px 0;color:var(--pine);font-weight:600;font-size:15px;text-decoration:underline;text-decoration-color:var(--brass);text-underline-offset:4px}
+.btn{border:1px solid var(--pine);background:transparent;color:var(--pine);border-radius:999px;padding:12px 20px;min-height:48px;font-weight:600}
+.btn.solid{background:var(--pine);color:#fff}
+.btn:disabled{opacity:.4}
+.btn.wide{width:100%}
+h2{font:600 15px/1.3 var(--ui);margin:36px 0 12px;padding-top:14px;border-top:1px solid var(--rule)}
+p{margin:0 0 12px}
+.mute{color:var(--mute);font-size:14px}
+.num{font:inherit;font-weight:600;font-size:17px;width:2.7em;text-align:center;padding:6px 2px;border:0;border-bottom:1.5px solid var(--brass);background:transparent;border-radius:0;font-variant-numeric:tabular-nums;-moz-appearance:textfield}
+.num::-webkit-outer-spin-button,.num::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.num:focus{outline:0;background:#fff;border-bottom-color:var(--pine)}
+
+/* Welcome */
+#welcome h1{font:500 40px/1.08 var(--display);margin:48px 0 16px;letter-spacing:-.01em}
+#welcome .lede{font-size:17px;max-width:30em;margin-bottom:32px}
+.ask{padding:18px 0;border-top:1px solid var(--rule)}
+.ask label{display:block;font-weight:600;margin-bottom:2px}
+.ask .line{display:flex;align-items:baseline;gap:8px;margin-top:8px}
+
+/* Builder */
+#wName{display:block;width:100%;border:0;background:transparent;font:500 32px/1.15 var(--display);padding:0;margin:0 0 4px;letter-spacing:-.01em}
+#wName:focus{outline:0;border-bottom:1.5px solid var(--brass)}
+#wName::placeholder{color:#9aa39e}
+.hero-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+svg.chart{display:block;width:100%;height:auto}
+ol.blocks{list-style:none;margin:0;padding:0}
+ol.blocks li{display:grid;grid-template-columns:34px 1fr;gap:4px 10px;padding:16px 0;border-bottom:1px solid var(--rule)}
+ol.blocks li:first-child{border-top:1px solid var(--rule)}
+.glyph{margin-top:8px}
+.sent{font-size:17px;line-height:2.1}
+.nw{white-space:nowrap}
+.sent .sub{display:block}
+.blk-foot{grid-column:2;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.blk-foot .tools button{background:none;border:0;color:var(--mute);font-size:14px;padding:8px 8px;min-height:36px}
+.blk-foot .tools button:hover{color:var(--pine)}
+.err{grid-column:2;color:#A5371B;font-size:14px;font-weight:500}
+.add{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px}
+.add button{display:flex;flex-direction:column;align-items:center;gap:6px;background:var(--paper);border:1px solid var(--rule);border-radius:12px;padding:12px 4px;font-weight:600;font-size:14px;min-height:64px}
+.dev{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--rule)}
+.dev strong{display:block}
+.dev .state{font-size:14px;color:var(--mute)}
+.dev .state.on{color:#1B6B4A;font-weight:600}
+.dev .btn{padding:8px 16px;min-height:40px;flex:0 0 auto}
+.notice{border-left:3px solid var(--brass);padding:4px 0 4px 12px;margin:0 0 16px;font-size:15px}
+.bar{position:fixed;left:0;right:0;bottom:0;background:rgba(244,245,241,.94);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-top:1px solid var(--rule);padding:12px 20px calc(12px + env(safe-area-inset-bottom));z-index:5}
+.bar .in{max-width:520px;margin:0 auto}
+.bar .hint{text-align:center;font-size:13px;color:var(--mute);margin-top:6px;min-height:1.2em}
+
+/* Sheets */
+.sheet{display:none;position:fixed;inset:0;background:rgba(18,53,43,.45);z-index:20;align-items:flex-end;justify-content:center}
+.sheet.on{display:flex}
+.sheet .card{background:var(--porcelain);width:100%;max-width:560px;max-height:88vh;overflow:auto;border-radius:20px 20px 0 0;padding:22px 20px calc(24px + env(safe-area-inset-bottom))}
+.sheet h3{font:500 26px/1.15 var(--display);margin:0 0 14px}
+.sheet .close{float:right}
+.steps{margin:0 0 16px;padding-left:1.3em}
+.steps li{margin-bottom:10px;padding-left:4px}
+.pick{display:flex;justify-content:space-between;align-items:center;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--rule);padding:14px 0}
+.pick span{color:var(--mute);font-size:14px}
+.field{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:12px 0;border-bottom:1px solid var(--rule)}
+.field select{border:0;border-bottom:1.5px solid var(--brass);background:transparent;padding:6px 2px;font-weight:600;font-size:16px}
+
+/* Ride */
+body.riding{background:var(--pine);color:#F3F6F2}
+#ride{padding-bottom:28px}
+#ride .where{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+#blockLabel{font:500 26px/1.15 var(--display)}
+#blockCount,#nextLabel{color:var(--night-mute);font-size:14px}
+#nextLabel{margin-top:4px;min-height:1.4em}
+.hrbox{text-align:center;margin:18px 0 6px}
+#rHr{font:500 148px/0.95 var(--display);font-variant-numeric:lining-nums tabular-nums;letter-spacing:-.02em}
+.hrcap{color:var(--night-mute);font-size:15px}
+.hrcap b{color:#F3F6F2;font-weight:600}
+#rDiff{font-weight:600;font-size:18px;margin-top:10px;min-height:1.5em}
+.level{position:relative;height:34px;margin:10px 4px 4px;border-radius:17px;background:var(--pine-2)}
+.level .band{position:absolute;top:0;bottom:0;left:35%;width:30%;background:rgba(159,216,184,.18);border-left:1px solid rgba(159,216,184,.5);border-right:1px solid rgba(159,216,184,.5)}
+.level .mid{position:absolute;top:-4px;bottom:-4px;left:50%;width:1px;background:var(--brass-lt)}
+.level .bub{position:absolute;top:5px;width:24px;height:24px;margin-left:-12px;border-radius:50%;background:var(--mint);left:50%;transition:left .8s ease,background .4s}
+.level-scale{display:flex;justify-content:space-between;color:var(--night-mute);font-size:12px;margin:0 4px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);margin:22px 0 16px;border-top:1px solid var(--pine-2);border-bottom:1px solid var(--pine-2)}
+.stats div{padding:12px 0;text-align:center}
+.stats div+div{border-left:1px solid var(--pine-2)}
+.stats b{display:block;font:600 22px/1.2 var(--ui);font-variant-numeric:tabular-nums}
+.stats span{font-size:12px;color:var(--night-mute)}
+#rideWarn{display:none;border:1px solid var(--peach);color:#FFE3D4;border-radius:12px;padding:10px 12px;font-size:15px;margin-bottom:14px}
+.ctl{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.ctl button{background:var(--pine-2);border:0;color:#F3F6F2;border-radius:14px;min-height:58px;font-weight:600;font-size:16px}
+#btnEnd{display:block;margin:16px auto 0;background:none;border:0;color:var(--night-mute);padding:12px;text-decoration:underline;text-underline-offset:4px}
+
+/* Done */
+#done h1{font:500 40px/1.08 var(--display);margin:48px 0 8px}
+.sum{display:grid;grid-template-columns:1fr 1fr;margin:28px 0;border-top:1px solid var(--rule)}
+.sum div{padding:18px 0;border-bottom:1px solid var(--rule)}
+.sum b{display:block;font:500 40px/1 var(--display);font-variant-numeric:lining-nums}
+.sum span{font-size:14px;color:var(--mute)}
+@media (max-width:360px){#rHr{font-size:120px}.sent{font-size:16px}}
+@media (prefers-reduced-motion:reduce){.level .bub{transition:none}}
+</style>
+</head>
+<body>
+
+<!-- Welcome: asked once -->
+<section class="screen" id="welcome">
+  <div class="mark">ATL Cycling<small>Heart Rate Trainer</small></div>
+  <h1>Ride to your heart rate, not to a wattage.</h1>
+  <p class="lede">Set the heart rate you want for each part of a ride. Your smart trainer raises and lowers the resistance to keep you there.</p>
+  <div class="ask">
+    <label for="wMax">Your maximum heart rate</label>
+    <div class="mute">If you have never measured it, enter your age and we will estimate it.</div>
+    <div class="line"><input class="num" id="wMax" type="number" inputmode="numeric" aria-label="Maximum heart rate"> bpm <span class="mute" style="margin-left:auto">or age</span> <input class="num" id="wAge" type="number" inputmode="numeric" aria-label="Age"></div>
+  </div>
+  <div class="ask">
+    <label for="wFtp">Your FTP, if you know it</label>
+    <div class="mute">Leave it empty if you do not. The first few minutes of your first ride will be less precise.</div>
+    <div class="line"><input class="num" id="wFtp" type="number" inputmode="numeric" aria-label="FTP in watts"> watts</div>
+  </div>
+  <div class="bar"><div class="in"><button class="btn solid wide" id="wGo" disabled>Continue</button><div class="hint">Saved on this device only. You can change both later.</div></div></div>
+</section>
+
+<!-- Builder -->
+<section class="screen" id="build">
+  <div class="top">
+    <div class="mark">ATL Cycling<small>Heart Rate Trainer</small></div>
+    <button class="link" data-open="guide">How it works</button>
+  </div>
+  <div id="noBt" class="notice" style="display:none">This browser cannot reach Bluetooth devices. On iPhone or iPad, open this page in the free Bluefy browser. On a computer or Android, use Chrome. You can still build workouts and preview a ride here.</div>
+
+  <input id="wName" aria-label="Workout name" placeholder="Name this workout" maxlength="40">
+  <div class="hero-meta"><span class="mute" id="planInfo"></span><span><button class="link" data-open="library">Workouts</button></span></div>
+  <svg class="chart" id="planChart" viewBox="0 0 600 230" role="img" aria-label="Target heart rate over the workout"></svg>
+
+  <h2>Blocks</h2>
+  <ol class="blocks" id="blocks"></ol>
+  <div class="add">
+    <button data-add="up"><svg width="34" height="16" viewBox="0 0 34 16"><path d="M2 14 L32 2" stroke="#12352B" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>Ramp up</button>
+    <button data-add="hold"><svg width="34" height="16" viewBox="0 0 34 16"><path d="M2 8 L32 8" stroke="#12352B" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>Hold</button>
+    <button data-add="down"><svg width="34" height="16" viewBox="0 0 34 16"><path d="M2 2 L32 14" stroke="#12352B" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>Ramp down</button>
+  </div>
+  <p style="margin-top:14px"><button class="link" id="btnSave">Save workout</button> &nbsp; <button class="link" id="btnShare">Copy link to share</button> <span class="mute" id="saveNote"></span></p>
+
+  <h2>Devices</h2>
+  <div class="dev"><div><strong>Heart rate strap</strong><span class="state" id="stHr">Not connected</span></div><button class="btn" id="btnHr">Connect</button></div>
+  <div class="dev"><div><strong>Smart trainer</strong><span class="state" id="stTr">Not connected</span></div><button class="btn" id="btnTr">Connect</button></div>
+  <p style="margin-top:14px"><button class="link" id="btnPreview">Preview a ride without devices</button></p>
+
+  <h2>Your numbers</h2>
+  <p class="mute" id="numSummary"></p>
+  <button class="link" data-open="numbers">Change numbers and limits</button>
+
+  <p class="mute" style="margin-top:40px">This is a training tool, not a medical device. Stop if you feel unwell, and check with a doctor before hard training.</p>
+
+  <div class="bar"><div class="in"><button class="btn solid wide" id="btnStart">Start workout</button><div class="hint" id="startNote"></div></div></div>
+</section>
+
+<!-- Ride -->
+<section class="screen" id="ride">
+  <div id="rideWarn"></div>
+  <div class="where"><div id="blockLabel"></div><div id="blockCount"></div></div>
+  <div id="nextLabel"></div>
+  <div class="hrbox">
+    <div id="rHr">--</div>
+    <div class="hrcap">beats per minute, target <b id="rTarget">--</b><span id="rBias"></span></div>
+    <div id="rDiff">&nbsp;</div>
+  </div>
+  <div class="level" aria-hidden="true"><div class="band"></div><div class="mid"></div><div class="bub" id="bub"></div></div>
+  <div class="level-scale"><span>10 below</span><span>target</span><span>10 above</span></div>
+  <div class="stats">
+    <div><b id="rPow">--</b><span>watts now</span></div>
+    <div><b id="rCmd">--</b><span>watts set</span></div>
+    <div><b id="rBlk">--</b><span>block left</span></div>
+    <div><b id="rTot">--</b><span>total left</span></div>
+  </div>
+  <svg class="chart" id="rideChart" viewBox="0 0 600 230" role="img" aria-label="Heart rate against target"></svg>
+  <div class="ctl">
+    <button id="btnDown">Target down 1</button>
+    <button id="btnUp">Target up 1</button>
+    <button id="btnPause">Pause</button>
+    <button id="btnSkip">Skip block</button>
+  </div>
+  <button id="btnEnd">End workout</button>
+</section>
+
+<!-- Summary -->
+<section class="screen" id="done">
+  <div class="mark">ATL Cycling<small>Heart Rate Trainer</small></div>
+  <h1 id="doneTitle">Ride complete.</h1>
+  <p class="mute" id="doneSub"></p>
+  <div class="sum">
+    <div><b id="sTime">--</b><span>ride time</span></div>
+    <div><b id="sBand">--</b><span>of the ride within 3 bpm of target</span></div>
+    <div><b id="sHr">--</b><span>average heart rate</span></div>
+    <div><b id="sPow">--</b><span>average watts</span></div>
+  </div>
+  <button class="btn solid wide" id="btnBack">Back to the workout</button>
+</section>
+
+<!-- Sheets -->
+<div class="sheet" id="guide"><div class="card">
+  <button class="link close" data-close>Close</button>
+  <h3>How it works</h3>
+  <p>You choose a heart rate for each block. Every second, this page reads your strap and nudges the trainer's resistance up or down to bring you to that number.</p>
+  <p>Heart rate answers a change in effort about a minute late. Expect to sit within a few beats of target once a block settles, and further off for the first minute or two after a big change.</p>
+  <h2>Riding with Zwift</h2>
+  <ol class="steps">
+    <li>Open this page on a second device, such as your phone. Keep it on screen for the whole ride.</li>
+    <li>In Zwift's pairing screen, pair your trainer as Power Source only. Remove it from Resistance, so Zwift does not fight this page for control.</li>
+    <li>Start a free ride in Zwift.</li>
+    <li>Here, connect your strap and trainer, then start the workout.</li>
+  </ol>
+  <h2>If a device will not connect</h2>
+  <ol class="steps">
+    <li>On iPhone or iPad, use the Bluefy browser. Safari cannot reach Bluetooth devices.</li>
+    <li>Some older trainers and straps accept only one Bluetooth connection. Disconnect them from other apps first.</li>
+  </ol>
+</div></div>
+
+<div class="sheet" id="library"><div class="card">
+  <button class="link close" data-close>Close</button>
+  <h3>Workouts</h3>
+  <h2 style="margin-top:8px">Start from a template</h2>
+  <div id="tplList"></div>
+  <h2>Saved on this device</h2>
+  <div id="savedList"></div>
+</div></div>
+
+<div class="sheet" id="numbers"><div class="card">
+  <button class="link close" data-close>Close</button>
+  <h3>Your numbers</h3>
+  <div class="field"><label for="cMaxHr">Maximum heart rate</label><span><input class="num" id="cMaxHr" type="number" inputmode="numeric"> bpm</span></div>
+  <div class="field"><label for="cFtp">FTP</label><span><input class="num" id="cFtp" type="number" inputmode="numeric"> watts</span></div>
+  <h2>Limits</h2>
+  <div class="field"><label for="cCeil">Heart rate ceiling. Resistance drops to the minimum if you reach it.</label><span><input class="num" id="cCeil" type="number" inputmode="numeric"> bpm</span></div>
+  <div class="field"><label for="cMaxP">Highest power the trainer may set</label><span><input class="num" id="cMaxP" type="number" inputmode="numeric"> watts</span></div>
+  <div class="field"><label for="cMinP">Lowest power the trainer may set</label><span><input class="num" id="cMinP" type="number" inputmode="numeric"> watts</span></div>
+  <div class="field"><label for="cResp">How quickly resistance reacts</label><select id="cResp"><option value="gentle">Gently</option><option value="normal">Normally</option><option value="fast">Quickly</option></select></div>
+</div></div>
+
+<script id="core">
+// ---- Core logic: no browser APIs, so it can be tested on its own ----
+var Core = (function () {
+  // Turn the block list into a flat timeline of segments.
+  function expand(blocks) {
+    var segs = [];
+    blocks.forEach(function (b) {
+      if (b.type === 'hold') {
+        var n = Math.max(1, Math.round(b.repeats || 1));
+        for (var i = 0; i < n; i++) {
+          segs.push({ kind: 'hold', from: b.hr, to: b.hr, dur: b.min * 60, label: n > 1 ? 'Hold ' + (i + 1) + ' of ' + n : 'Hold' });
+          if (i < n - 1 && b.recMin > 0) segs.push({ kind: 'recover', from: b.recHr, to: b.recHr, dur: b.recMin * 60, label: 'Recovery ' + (i + 1) + ' of ' + (n - 1) });
+        }
+      } else {
+        segs.push({ kind: b.type, from: b.from, to: b.to, dur: b.min * 60, label: b.type === 'up' ? 'Ramp up' : 'Ramp down' });
+      }
+    });
+    var t = 0;
+    segs = segs.filter(function (s) { return s.dur > 0 && isFinite(s.dur) && isFinite(s.from) && isFinite(s.to); });
+    segs.forEach(function (s) { s.start = t; t += s.dur; s.end = t; });
+    return { segs: segs, total: t };
+  }
+  // Target heart rate at time t (seconds).
+  function at(plan, t) {
+    var segs = plan.segs;
+    if (!segs.length) return null;
+    var i = 0;
+    while (i < segs.length - 1 && t >= segs[i].end) i++;
+    var s = segs[i];
+    var f = Math.min(1, Math.max(0, (t - s.start) / s.dur));
+    return { idx: i, seg: s, target: s.from + (s.to - s.from) * f, left: Math.max(0, s.end - t) };
+  }
+  // First guess of the power that produces a given heart rate.
+  // Assumes heart rate is about 90% of max at FTP and about 45% of max at zero load.
+  function guessPower(hr, cfg) {
+    return cfg.ftp * (hr / cfg.maxHr - 0.45) / 0.45;
+  }
+  var GAINS = {
+    gentle: { kp: 1.2, ki: 0.018 },
+    normal: { kp: 2.0, ki: 0.030 },
+    fast: { kp: 3.0, ki: 0.045 }
+  };
+  // Controller: starting guess + correction for the current gap + slow learned correction.
+  function Controller(cfg) {
+    this.cfg = cfg;
+    this.learned = 0;   // watts added or removed because the starting guess was off
+    this.power = null;  // last commanded power
+    this.hrS = null;    // smoothed heart rate
+  }
+  Controller.prototype.smooth = function (hr, dt) {
+    if (this.hrS == null) this.hrS = hr;
+    var a = dt / (4 + dt);
+    this.hrS += a * (hr - this.hrS);
+    return this.hrS;
+  };
+  Controller.prototype.step = function (target, hr, dt, freeze) {
+    var c = this.cfg, g = GAINS[c.resp] || GAINS.normal;
+    var hrS = this.smooth(hr, dt);
+    var e = target - hrS;
+    var base = guessPower(target, c);
+    var p = Math.max(-60, Math.min(60, g.kp * e));
+    var raw = base + p + this.learned;
+    var satHi = raw >= c.maxP && e > 0, satLo = raw <= c.minP && e < 0;
+    if (!freeze && !satHi && !satLo) {
+      var eI = Math.max(-6, Math.min(6, e));
+      this.learned = Math.max(-200, Math.min(200, this.learned + g.ki * eI * dt));
+    }
+    var want = Math.max(c.minP, Math.min(c.maxP, raw));
+    if (this.power == null) this.power = Math.max(c.minP, Math.min(c.maxP, base));
+    var maxStep = 4 * dt;
+    this.power += Math.max(-maxStep, Math.min(maxStep, want - this.power));
+    return this.power;
+  };
+  // Simulated rider for demo mode and for testing.
+  function Sim(opts) {
+    opts = opts || {};
+    this.rest = opts.rest != null ? opts.rest : 68;
+    this.k = opts.k != null ? opts.k : 0.42;      // bpm per watt
+    this.hr = this.rest + 20;
+    this.buf = [];
+    this.delay = opts.delay != null ? opts.delay : 8;
+    this.t = 0;
+    this.drift = opts.drift != null ? opts.drift : 0.0015; // bpm per second of slow upward drift
+    this.noise = opts.noise != null ? opts.noise : 1;
+  }
+  Sim.prototype.step = function (power, dt) {
+    this.t += dt;
+    this.buf.push({ t: this.t, p: power });
+    while (this.buf.length > 1 && this.buf[1].t <= this.t - this.delay) this.buf.shift();
+    var pd = this.buf[0].p;
+    var ss = this.rest + this.k * pd + this.drift * this.t;
+    var tau = ss > this.hr ? 35 : 55;
+    this.hr += (ss - this.hr) * (1 - Math.exp(-dt / tau));
+    return Math.round(this.hr + (Math.random() * 2 - 1) * this.noise);
+  };
+  return { expand: expand, at: at, guessPower: guessPower, Controller: Controller, Sim: Sim };
+})();
+if (typeof module !== 'undefined') module.exports = Core;
+</script>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  function load(key, fallback) { try { var v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch (e) { return fallback; } }
+  function save(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {} }
+  function mmss(s) { s = Math.max(0, Math.round(s)); var m = Math.floor(s / 60), r = s % 60; return m + ':' + (r < 10 ? '0' : '') + r; }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function show(id) {
+    ['welcome', 'build', 'ride', 'done'].forEach(function (s) { $(s).classList.toggle('on', s === id); });
+    document.body.classList.toggle('riding', id === 'ride');
+    window.scrollTo(0, 0);
+  }
+
+  // ---------- Numbers ----------
+  var cfg = load('atl.cfg', null);
+  function deriveLimits(c) {
+    c.ftpKnown = !!c.ftpKnown;
+    if (!c.ftp) c.ftp = 180;
+    if (!c.ceil) c.ceil = Math.round(c.maxHr * 0.95);
+    if (!c.maxP) c.maxP = c.ftpKnown ? Math.round(c.ftp * 1.2) : 300;
+    if (!c.minP) c.minP = 60;
+    if (!c.resp) c.resp = 'normal';
+    return c;
+  }
+  var cfgMap = { cMaxHr: 'maxHr', cFtp: 'ftp', cCeil: 'ceil', cMaxP: 'maxP', cMinP: 'minP' };
+  function fillNumbers() {
+    Object.keys(cfgMap).forEach(function (id) { $(id).value = (id === 'cFtp' && !cfg.ftpKnown) ? '' : cfg[cfgMap[id]]; });
+    $('cResp').value = cfg.resp;
+    $('numSummary').textContent = 'Maximum heart rate ' + cfg.maxHr + ' bpm. ' + (cfg.ftpKnown ? 'FTP ' + cfg.ftp + ' watts. ' : 'FTP not set. ') + 'Ceiling ' + cfg.ceil + ' bpm.';
+  }
+  Object.keys(cfgMap).forEach(function (id) {
+    $(id).addEventListener('input', function () {
+      var n = parseFloat($(id).value);
+      if (!(isFinite(n) && n > 0)) return;
+      cfg[cfgMap[id]] = n;
+      if (id === 'cFtp') cfg.ftpKnown = true;
+      save('atl.cfg', cfg); fillNumbers_summaryOnly(); drawPlan();
+    });
+  });
+  function fillNumbers_summaryOnly() { $('numSummary').textContent = 'Maximum heart rate ' + cfg.maxHr + ' bpm. ' + (cfg.ftpKnown ? 'FTP ' + cfg.ftp + ' watts. ' : 'FTP not set. ') + 'Ceiling ' + cfg.ceil + ' bpm.'; }
+  $('cResp').addEventListener('change', function () { cfg.resp = $('cResp').value; save('atl.cfg', cfg); });
+
+  // Welcome
+  function welcomeCheck() { var m = parseFloat($('wMax').value); $('wGo').disabled = !(m >= 100 && m <= 230); }
+  $('wMax').addEventListener('input', function () { $('wAge').value = ''; welcomeCheck(); });
+  $('wAge').addEventListener('input', function () { var a = parseFloat($('wAge').value); if (a >= 10 && a <= 100) $('wMax').value = Math.round(220 - a); welcomeCheck(); });
+  $('wGo').addEventListener('click', function () {
+    var f = parseFloat($('wFtp').value);
+    cfg = deriveLimits({ maxHr: Math.round(parseFloat($('wMax').value)), ftp: f > 0 ? Math.round(f) : 0, ftpKnown: f > 0 });
+    save('atl.cfg', cfg);
+    if (!blocks) useTemplate(1);
+    enterBuild();
+  });
+
+  // ---------- Templates (set as a share of maximum heart rate) ----------
+  var TEMPLATES = [
+    { name: 'Steady 45', note: '45 min, easy aerobic', b: [['up', 55, 68, 8], ['hold', 70, 30, 1], ['down', 68, 55, 7]] },
+    { name: 'Three by eight', note: '48 min, three firm efforts', b: [['up', 55, 72, 10], ['hold', 78, 8, 3, 65, 3], ['down', 70, 55, 8]] },
+    { name: 'Pyramid', note: '40 min, up and back down', b: [['up', 55, 70, 8], ['hold', 72, 5, 1], ['hold', 76, 5, 1], ['hold', 80, 5, 1], ['hold', 76, 5, 1], ['hold', 72, 5, 1], ['down', 70, 55, 7]] }
+  ];
+  function pct(p) { return Math.round(cfg.maxHr * p / 100); }
+  function fromTemplate(t) {
+    return t.b.map(function (x) {
+      if (x[0] === 'hold') return { type: 'hold', hr: pct(x[1]), min: x[2], repeats: x[3], recHr: pct(x[4] || x[1] - 13), recMin: x[5] || 3 };
+      return { type: x[0], from: pct(x[1]), to: pct(x[2]), min: x[3] };
+    });
+  }
+  function useTemplate(i) { blocks = fromTemplate(TEMPLATES[i]); wName = TEMPLATES[i].name; }
+
+  // ---------- Workout builder ----------
+  var cur = load('atl.cur', null);
+  var blocks = cur ? cur.blocks : null, wName = cur ? cur.name : '';
+  // A shared link carries the workout in the address.
+  try {
+    var m = location.hash.match(/^#w=(.+)$/);
+    if (m) { var sh = JSON.parse(decodeURIComponent(escape(atob(m[1])))); if (sh && sh.b && sh.b.length) { blocks = sh.b; wName = sh.n || 'Shared workout'; } }
+  } catch (e) {}
+
+  var GLYPH = {
+    up: '<svg class="glyph" width="34" height="16" viewBox="0 0 34 16"><path d="M2 14 L32 2" stroke="#12352B" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>',
+    hold: '<svg class="glyph" width="34" height="16" viewBox="0 0 34 16"><path d="M2 8 L32 8" stroke="#12352B" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>',
+    down: '<svg class="glyph" width="34" height="16" viewBox="0 0 34 16"><path d="M2 2 L32 14" stroke="#12352B" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>'
+  };
+  function inp(i, key, val, label) { return '<input class="num" type="number" inputmode="decimal" aria-label="' + label + '" data-i="' + i + '" data-k="' + key + '" value="' + val + '">'; }
+  function share(b) {
+    if (b.type === 'hold') return Math.round(b.hr / cfg.maxHr * 100) + '% of your maximum';
+    return Math.round(b.from / cfg.maxHr * 100) + '% to ' + Math.round(b.to / cfg.maxHr * 100) + '% of your maximum';
+  }
+  function renderBlocks() {
+    var html = '';
+    blocks.forEach(function (b, i) {
+      html += '<li>' + GLYPH[b.type] + '<div class="sent">';
+      if (b.type === 'hold') {
+        html += '<span class="nw">Hold ' + inp(i, 'hr', b.hr, 'Heart rate') + ' bpm</span> <span class="nw">for ' + inp(i, 'min', b.min, 'Minutes') + ' min</span>' +
+          '<span class="sub">Repeat ' + inp(i, 'repeats', b.repeats, 'Number of intervals') + ' <span data-times="' + i + '">' + (b.repeats === 1 ? 'time' : 'times') + '</span></span>' +
+          '<span class="sub" data-rec="' + i + '"' + (b.repeats > 1 ? '' : ' style="display:none"') + '><span class="nw">with ' + inp(i, 'recMin', b.recMin, 'Recovery minutes') + ' min</span> <span class="nw">at ' + inp(i, 'recHr', b.recHr, 'Recovery heart rate') + ' bpm between</span></span>';
+      } else {
+        html += '<span class="nw">' + (b.type === 'up' ? 'Ramp up' : 'Ramp down') + ' from ' + inp(i, 'from', b.from, 'Starting heart rate') + '</span> <span class="nw">to ' + inp(i, 'to', b.to, 'Ending heart rate') + ' bpm</span><span class="sub">over ' + inp(i, 'min', b.min, 'Minutes') + ' min</span>';
+      }
+      html += '</div><div class="blk-foot"><span class="mute" data-share="' + i + '">' + share(b) + '</span><span class="tools">' +
+        '<button data-act="up" data-i="' + i + '" aria-label="Move block up">Up</button>' +
+        '<button data-act="down" data-i="' + i + '" aria-label="Move block down">Down</button>' +
+        '<button data-act="copy" data-i="' + i + '">Copy</button>' +
+        '<button data-act="del" data-i="' + i + '">Remove</button></span></div>' +
+        '<div class="err" data-err="' + i + '"></div></li>';
+    });
+    $('blocks').innerHTML = html || '<li style="display:block" class="mute">No blocks yet. Add a ramp or a hold below.</li>';
+    drawPlan();
+  }
+  $('blocks').addEventListener('input', function (ev) {
+    var el = ev.target, i = +el.dataset.i, k = el.dataset.k;
+    if (!k) return;
+    var n = parseFloat(el.value);
+    blocks[i][k] = isFinite(n) ? n : 0;
+    if (k === 'repeats') {
+      blocks[i][k] = Math.max(1, Math.round(blocks[i][k]) || 1);
+      var rec = document.querySelector('[data-rec="' + i + '"]'); if (rec) rec.style.display = blocks[i][k] > 1 ? '' : 'none';
+      var tm = document.querySelector('[data-times="' + i + '"]'); if (tm) tm.textContent = blocks[i][k] === 1 ? 'time' : 'times';
+    }
+    var sh = document.querySelector('[data-share="' + i + '"]'); if (sh) sh.textContent = share(blocks[i]);
+    drawPlan();
+  });
+  $('blocks').addEventListener('click', function (ev) {
+    var el = ev.target.closest('button'); if (!el) return;
+    var i = +el.dataset.i, a = el.dataset.act;
+    if (a === 'del') blocks.splice(i, 1);
+    if (a === 'copy') blocks.splice(i + 1, 0, JSON.parse(JSON.stringify(blocks[i])));
+    if (a === 'up' && i > 0) blocks.splice(i - 1, 0, blocks.splice(i, 1)[0]);
+    if (a === 'down' && i < blocks.length - 1) blocks.splice(i + 1, 0, blocks.splice(i, 1)[0]);
+    renderBlocks();
+  });
+  document.querySelectorAll('[data-add]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var t = btn.dataset.add, last = blocks[blocks.length - 1], lastHr = last ? (last.type === 'hold' ? last.hr : last.to) : pct(60);
+      if (t === 'up') blocks.push({ type: 'up', from: lastHr, to: Math.min(cfg.ceil - 1, lastHr + 20), min: 5 });
+      if (t === 'down') blocks.push({ type: 'down', from: lastHr, to: Math.max(80, lastHr - 20), min: 5 });
+      if (t === 'hold') blocks.push({ type: 'hold', hr: lastHr, min: 10, repeats: 1, recHr: Math.max(80, lastHr - 20), recMin: 3 });
+      renderBlocks();
+    });
+  });
+  $('wName').addEventListener('input', function () { wName = $('wName').value; save('atl.cur', { name: wName, blocks: blocks }); });
+  function validate() {
+    var ok = blocks.length > 0;
+    blocks.forEach(function (b, i) {
+      var msg = '';
+      var hrs = b.type === 'hold' ? [b.hr].concat(b.repeats > 1 ? [b.recHr] : []) : [b.from, b.to];
+      if (!(b.min > 0)) msg = 'Give this block a length in minutes.';
+      else if (b.type === 'hold' && b.repeats > 1 && !(b.recMin > 0)) msg = 'Give the recovery a length in minutes.';
+      else if (hrs.some(function (h) { return !(h >= 60); })) msg = 'Heart rate must be 60 bpm or higher.';
+      else if (hrs.some(function (h) { return h >= cfg.ceil; })) msg = 'Keep this below your ceiling of ' + cfg.ceil + ' bpm, or raise the ceiling under Your numbers.';
+      else if (b.type === 'up' && !(b.to > b.from)) msg = 'A ramp up must end higher than it starts.';
+      else if (b.type === 'down' && !(b.to < b.from)) msg = 'A ramp down must end lower than it starts.';
+      var el = document.querySelector('[data-err="' + i + '"]'); if (el) el.textContent = msg;
+      if (msg) ok = false;
+    });
+    return ok;
+  }
+
+  // ---------- Charts ----------
+  var W = 600, H = 230, PAD = { l: 44, r: 8, t: 12, b: 30 };
+  function scale(plan, extra) {
+    var lo = 999, hi = 0;
+    plan.segs.forEach(function (s) { lo = Math.min(lo, s.from, s.to); hi = Math.max(hi, s.from, s.to); });
+    (extra || []).forEach(function (v) { lo = Math.min(lo, v); hi = Math.max(hi, v); });
+    lo = Math.floor((lo - 8) / 10) * 10; hi = Math.ceil((hi + 8) / 10) * 10;
+    return {
+      lo: lo, hi: hi,
+      x: function (t) { return PAD.l + (W - PAD.l - PAD.r) * (plan.total ? t / plan.total : 0); },
+      y: function (v) { return PAD.t + (H - PAD.t - PAD.b) * (1 - (v - lo) / (hi - lo)); }
+    };
+  }
+  function chartSvg(plan, dark, hrPts, cursorT) {
+    if (!plan.segs.length) return '';
+    var c = dark ? { grid: '#1B4638', text: '#A8BBB1', line: '#D9BC7A', fill: 'rgba(217,188,122,.10)', hr: '#F3F6F2' } : { grid: '#D5D9D2', text: '#66716B', line: '#12352B', fill: 'rgba(18,53,43,.07)', hr: '#A9853C' };
+    var sc = scale(plan, hrPts ? hrPts.map(function (p) { return p[1]; }) : null), out = '', base = H - PAD.b;
+    var stepV = (sc.hi - sc.lo) > 60 ? 20 : 10;
+    for (var v = sc.lo; v <= sc.hi; v += stepV) {
+      out += '<line x1="' + PAD.l + '" x2="' + (W - PAD.r) + '" y1="' + sc.y(v) + '" y2="' + sc.y(v) + '" stroke="' + c.grid + '" stroke-width="1"/>';
+      out += '<text x="' + (PAD.l - 6) + '" y="' + (sc.y(v) + 4) + '" fill="' + c.text + '" font-size="17" text-anchor="end" font-family="Hanken Grotesk,sans-serif">' + v + '</text>';
+    }
+    var pts = [];
+    plan.segs.forEach(function (s) { pts.push(sc.x(s.start).toFixed(1) + ',' + sc.y(s.from).toFixed(1)); pts.push(sc.x(s.end).toFixed(1) + ',' + sc.y(s.to).toFixed(1)); });
+    out += '<polygon fill="' + c.fill + '" points="' + PAD.l + ',' + base + ' ' + pts.join(' ') + ' ' + (W - PAD.r) + ',' + base + '"/>';
+    out += '<polyline fill="none" stroke="' + c.line + '" stroke-width="2.5" stroke-linejoin="round" points="' + pts.join(' ') + '"/>';
+    var every = plan.total > 5400 ? 1800 : plan.total > 1800 ? 600 : 300;
+    for (var t = 0; t <= plan.total; t += every) {
+      var anchor = t === 0 ? 'start' : (plan.total - t < every * 0.4 ? 'end' : 'middle');
+      out += '<text x="' + sc.x(t) + '" y="' + (H - 6) + '" fill="' + c.text + '" font-size="17" text-anchor="' + anchor + '" font-family="Hanken Grotesk,sans-serif">' + Math.round(t / 60) + (t === 0 ? ' min' : '') + '</text>';
+    }
+    if (hrPts && hrPts.length > 1) out += '<polyline fill="none" stroke="' + c.hr + '" stroke-width="2" stroke-linejoin="round" points="' + hrPts.map(function (p) { return sc.x(p[0]).toFixed(1) + ',' + sc.y(p[1]).toFixed(1); }).join(' ') + '"/>';
+    if (cursorT != null) out += '<line x1="' + sc.x(cursorT) + '" x2="' + sc.x(cursorT) + '" y1="' + PAD.t + '" y2="' + base + '" stroke="' + c.hr + '" stroke-width="1" stroke-dasharray="3 4"/>';
+    return out;
+  }
+  function drawPlan() {
+    save('atl.cur', { name: wName, blocks: blocks });
+    var plan = Core.expand(blocks), ok = validate();
+    $('planChart').innerHTML = chartSvg(plan, false);
+    var mins = Math.round(plan.total / 60), n = plan.segs.length;
+    $('planInfo').textContent = n ? mins + ' minutes, ' + n + (n === 1 ? ' block' : ' blocks') : 'Add a block to begin';
+    planOk = ok; updateStart();
+  }
+  var planOk = false;
+
+  // ---------- Library, saving, sharing ----------
+  function renderLibrary() {
+    $('tplList').innerHTML = TEMPLATES.map(function (t, i) { return '<button class="pick" data-tpl="' + i + '"><strong>' + t.name + '</strong><span>' + t.note + '</span></button>'; }).join('');
+    var all = load('atl.saved', {}), names = Object.keys(all).sort();
+    $('savedList').innerHTML = names.length ? names.map(function (n) {
+      return '<div class="pick"><button class="link" style="text-decoration:none;font-weight:700;color:inherit" data-saved="' + esc(n) + '">' + esc(n) + '</button><button class="link" style="font-weight:400;font-size:14px" data-forget="' + esc(n) + '">Delete</button></div>';
+    }).join('') : '<p class="mute">Nothing saved yet. Build a workout, then choose Save workout.</p>';
+  }
+  $('library').addEventListener('click', function (ev) {
+    var el = ev.target.closest('button'); if (!el) return;
+    var all = load('atl.saved', {});
+    if (el.dataset.tpl != null) { useTemplate(+el.dataset.tpl); }
+    else if (el.dataset.saved) { blocks = JSON.parse(JSON.stringify(all[el.dataset.saved])); wName = el.dataset.saved; }
+    else if (el.dataset.forget) { delete all[el.dataset.forget]; save('atl.saved', all); renderLibrary(); return; }
+    else return;
+    $('wName').value = wName; renderBlocks(); closeSheets();
+  });
+  function note(text) { $('saveNote').textContent = text; setTimeout(function () { if ($('saveNote').textContent === text) $('saveNote').textContent = ''; }, 4000); }
+  $('btnSave').addEventListener('click', function () {
+    var n = (wName || '').trim(); if (!n) { $('wName').focus(); note('Name the workout first.'); return; }
+    var all = load('atl.saved', {}); all[n] = JSON.parse(JSON.stringify(blocks)); save('atl.saved', all); note('Saved.');
+  });
+  $('btnShare').addEventListener('click', function () {
+    var url = location.href.split('#')[0] + '#w=' + btoa(unescape(encodeURIComponent(JSON.stringify({ n: wName, b: blocks }))));
+    var done = function () { note('Link copied.'); }, fail = function () { window.prompt ? note('Copy failed. Long-press the address bar instead.') : 0; try { location.hash = url.split('#')[1]; } catch (e) {} };
+    try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done, fail); else fail(); } catch (e) { fail(); }
+  });
+
+  // Sheets
+  function closeSheets() { document.querySelectorAll('.sheet').forEach(function (s) { s.classList.remove('on'); }); }
+  document.querySelectorAll('[data-open]').forEach(function (b) { b.addEventListener('click', function () { if (b.dataset.open === 'library') renderLibrary(); if (b.dataset.open === 'numbers') fillNumbers(); $(b.dataset.open).classList.add('on'); }); });
+  document.querySelectorAll('.sheet').forEach(function (s) { s.addEventListener('click', function (ev) { if (ev.target === s || ev.target.closest('[data-close]')) { closeSheets(); renderBlocks(); fillNumbers(); } }); });
+
+  // ---------- Bluetooth ----------
+  var live = { hr: null, hrAt: 0, power: null, powerAt: 0, cadence: null };
+  var hrDev = null, trDev = null, trMode = null, trChar = null;
+  var chain = Promise.resolve();
+  function queue(fn) { var r = chain.then(fn); chain = r.catch(function () {}); return r; }
+  function write(ch, bytes) {
+    var data = new Uint8Array(bytes);
+    return queue(function () { return ch.writeValueWithResponse ? ch.writeValueWithResponse(data) : ch.writeValue(data); });
+  }
+  function setStatus(which, text, on) {
+    var el = $(which === 'hr' ? 'stHr' : 'stTr'); el.textContent = text; el.className = 'state' + (on ? ' on' : '');
+    $(which === 'hr' ? 'btnHr' : 'btnTr').textContent = on ? 'Change' : 'Connect';
+    updateStart();
+  }
+  function setupHr(dev) {
+    return dev.gatt.connect().then(function (srv) { return srv.getPrimaryService(0x180D); })
+      .then(function (svc) { return svc.getCharacteristic(0x2A37); })
+      .then(function (ch) {
+        ch.addEventListener('characteristicvaluechanged', function (ev) {
+          var v = ev.target.value;
+          live.hr = (v.getUint8(0) & 1) ? v.getUint16(1, true) : v.getUint8(1);
+          live.hrAt = Date.now();
+        });
+        return ch.startNotifications();
+      }).then(function () { setStatus('hr', 'Connected to ' + (dev.name || 'strap'), true); });
+  }
+  var WAHOO = 'a026e005-0a7d-4ab3-97fa-f1500f9feb8b';
+  function setupTrainer(dev) {
+    var server;
+    return dev.gatt.connect().then(function (srv) {
+      server = srv;
+      // Preferred: the standard fitness machine service (FTMS).
+      return srv.getPrimaryService(0x1826).then(function (svc) {
+        return svc.getCharacteristic(0x2AD2).then(function (bike) {
+          bike.addEventListener('characteristicvaluechanged', onBikeData);
+          return bike.startNotifications();
+        }).catch(function () {}).then(function () { return svc.getCharacteristic(0x2AD9); })
+          .then(function (cp) {
+            trChar = cp; trMode = 'ftms';
+            return cp.startNotifications().catch(function () {}).then(function () { return write(cp, [0x00]); }).then(function () { return write(cp, [0x07]).catch(function () {}); });
+          });
+      }).catch(function () {
+        // Fallback for older Wahoo trainers: Wahoo's own control channel inside the cycling power service.
+        return server.getPrimaryService(0x1818).then(function (svc) { return svc.getCharacteristic(WAHOO); })
+          .then(function (ch) { trChar = ch; trMode = 'wahoo'; return ch.startNotifications().catch(function () {}).then(function () { return write(ch, [0x20, 0xEE, 0xFC]); }); });
+      });
+    }).then(function () {
+      return server.getPrimaryService(0x1818).then(function (svc) { return svc.getCharacteristic(0x2A63); })
+        .then(function (ch) {
+          ch.addEventListener('characteristicvaluechanged', function (ev) { live.power = ev.target.value.getInt16(2, true); live.powerAt = Date.now(); });
+          return ch.startNotifications();
+        }).catch(function () {});
+    }).then(function () { setStatus('tr', 'Connected to ' + (dev.name || 'trainer'), true); });
+  }
+  function onBikeData(ev) {
+    var v = ev.target.value, flags = v.getUint16(0, true), o = 2;
+    if (!(flags & 1)) o += 2;
+    if (flags & 2) o += 2;
+    if (flags & 4) { live.cadence = v.getUint16(o, true) / 2; o += 2; }
+    if (flags & 8) o += 2;
+    if (flags & 16) o += 3;
+    if (flags & 32) o += 2;
+    if (flags & 64) { live.power = v.getInt16(o, true); live.powerAt = Date.now(); }
+  }
+  function sendPower(w) {
+    w = Math.round(w);
+    if (!trChar || !trDev || !trDev.gatt.connected) return;
+    write(trChar, [trMode === 'ftms' ? 0x05 : 0x42, w & 255, (w >> 8) & 255]).catch(function () {});
+  }
+  function watch(dev, which, setup) {
+    dev.addEventListener('gattserverdisconnected', function () {
+      if ((which === 'hr' ? hrDev : trDev) !== dev) return;
+      setStatus(which, 'Connection lost. Trying again.', false);
+      var tries = 0;
+      (function retry() {
+        if (dev.gatt.connected || (which === 'hr' ? hrDev : trDev) !== dev) return;
+        tries++;
+        setup(dev).catch(function () { if (tries < 200) setTimeout(retry, 3000); });
+      })();
+    });
+  }
+  function failText(e) { return 'Could not connect. Close other apps using it, then try again.'; }
+  $('btnHr').addEventListener('click', function () {
+    navigator.bluetooth.requestDevice({ filters: [{ services: [0x180D] }] }).then(function (dev) {
+      hrDev = dev; setStatus('hr', 'Connecting', false); watch(dev, 'hr', setupHr); return setupHr(dev);
+    }).catch(function (e) { if (e && e.name !== 'NotFoundError') setStatus('hr', failText(e), false); });
+  });
+  $('btnTr').addEventListener('click', function () {
+    navigator.bluetooth.requestDevice({ filters: [{ services: [0x1826] }, { services: [0x1818] }, { namePrefix: 'KICKR' }], optionalServices: [0x1826, 0x1818] }).then(function (dev) {
+      trDev = dev; trChar = null; setStatus('tr', 'Connecting', false); watch(dev, 'tr', setupTrainer); return setupTrainer(dev);
+    }).catch(function (e) { if (e && e.name !== 'NotFoundError') setStatus('tr', failText(e), false); });
+  });
+  var hasBt = !!navigator.bluetooth;
+  if (!hasBt) { $('noBt').style.display = ''; $('btnHr').disabled = true; $('btnTr').disabled = true; }
+  function ready() { return !!(hrDev && hrDev.gatt.connected && trDev && trDev.gatt.connected && trChar); }
+  function updateStart() {
+    var r = ready();
+    $('btnStart').disabled = !planOk;
+    $('btnStart').textContent = r ? 'Start workout' : (hasBt ? 'Connect devices to start' : 'Preview this ride');
+    $('startNote').textContent = !planOk ? 'One of the blocks needs a fix first.' : r ? '' : (hasBt ? 'Connect your strap and trainer under Devices.' : 'A simulated rider, at 20 times speed.');
+  }
+
+  // ---------- Ride ----------
+  var ride = null, wakeLock = null;
+  function keepAwake() { try { if (navigator.wakeLock) navigator.wakeLock.request('screen').then(function (l) { wakeLock = l; }).catch(function () {}); } catch (e) {} }
+  document.addEventListener('visibilitychange', function () { if (ride && document.visibilityState === 'visible') keepAwake(); });
+  function start(demo) {
+    if (!planOk) return;
+    ride = {
+      plan: Core.expand(blocks), ctrl: new Core.Controller(cfg), sim: demo ? new Core.Sim() : null, demo: demo,
+      elapsed: 0, last: Date.now(), paused: false, bias: 0, pts: [], lastPt: -99, lastSent: null, lastSentAt: 0,
+      idleSince: null, overCeil: false, cmd: null, n: 0, inBand: 0, sumHr: 0, sumP: 0, nP: 0
+    };
+    if (demo) { live.hr = 88; live.hrAt = Date.now(); live.power = 80; live.powerAt = Date.now(); }
+    $('btnPause').textContent = 'Pause';
+    show('ride'); keepAwake();
+    ride.timer = setInterval(tick, 1000);
+    tick();
+  }
+  function finish(completed) {
+    var r = ride; if (!r) return;
+    clearInterval(r.timer);
+    if (!r.demo && trChar) { sendPower(cfg.minP); if (trMode === 'ftms') write(trChar, [0x01]).catch(function () {}); }
+    try { if (wakeLock) wakeLock.release(); } catch (e) {}
+    ride = null;
+    $('doneTitle').textContent = completed ? 'Ride complete.' : 'Ride ended.';
+    $('doneSub').textContent = (wName || 'Workout') + (r.demo ? ', previewed with a simulated rider.' : '.');
+    $('sTime').textContent = mmss(r.elapsed);
+    $('sBand').textContent = r.n ? Math.round(100 * r.inBand / r.n) + '%' : '--';
+    $('sHr').textContent = r.n ? Math.round(r.sumHr / r.n) : '--';
+    $('sPow').textContent = r.nP ? Math.round(r.sumP / r.nP) : '--';
+    show('done');
+  }
+  function advance(r, dt, now) {
+    // One control step. Returns a warning string, or '' when all is well.
+    var warn = '', idle = false;
+    if (!r.demo && live.power != null && now - live.powerAt < 4000 && live.power < 15) { r.idleSince = r.idleSince || now; idle = now - r.idleSince > 5000; } else r.idleSince = null;
+    var running = !r.paused && !idle;
+    if (running) r.elapsed += dt;
+    if (r.elapsed >= r.plan.total) return null;
+    var pos = Core.at(r.plan, r.elapsed), target = pos.target + r.bias;
+    var hrFresh = live.hr != null && now - live.hrAt < 10000 && live.hr > 30;
+    if (r.paused) { r.cmd = cfg.minP; warn = 'Paused. Resistance is at ' + cfg.minP + ' watts.'; }
+    else if (!hrFresh) {
+      if (now - live.hrAt > 30000 || live.hr == null) r.cmd = cfg.minP;
+      warn = 'No heart rate signal. Resistance is ' + (r.cmd === cfg.minP ? 'at the minimum' : 'held steady') + ' until your strap reconnects.';
+    } else {
+      if (live.hr >= cfg.ceil) r.overCeil = true; else if (live.hr < cfg.ceil - 5) r.overCeil = false;
+      if (r.overCeil) { r.ctrl.smooth(live.hr, dt); r.ctrl.power = cfg.minP; r.cmd = cfg.minP; warn = 'You reached your ceiling of ' + cfg.ceil + ' bpm. Resistance is at the minimum.'; }
+      else r.cmd = r.ctrl.step(target, live.hr, dt, idle);
+      if (idle) warn = 'Start pedaling to continue. The clock is stopped.';
+    }
+    if (running && hrFresh) {
+      r.n += dt; r.sumHr += live.hr * dt; if (Math.abs(live.hr - target) <= 3) r.inBand += dt;
+      if (live.power != null) { r.sumP += live.power * dt; r.nP += dt; }
+      if (r.elapsed - r.lastPt >= 5) { r.pts.push([r.elapsed, live.hr]); r.lastPt = r.elapsed; }
+    }
+    return warn;
+  }
+  function tick() {
+    var r = ride; if (!r) return;
+    var now = Date.now(), dt = Math.min(5, Math.max(0, (now - r.last) / 1000)); r.last = now;
+    var warn = '';
+    if (r.demo) {
+      // Preview: a simulated rider at 20 times speed.
+      var steps = r.paused ? 1 : Math.round(dt * 20);
+      for (var i = 0; i < steps && warn !== null; i++) {
+        var p = r.paused ? 0 : (r.cmd != null ? r.cmd : 80);
+        live.hr = r.sim.step(p, 1); live.hrAt = now; live.power = Math.round(p + (Math.random() * 6 - 3)); live.powerAt = now;
+        warn = advance(r, r.paused ? 0 : 1, now);
+      }
+      if (warn === '') warn = 'Preview with a simulated rider, at 20 times speed.';
+    } else {
+      warn = advance(r, dt, now);
+      if (warn !== null && trDev && !trDev.gatt.connected) warn = 'Trainer connection lost. Trying again.';
+    }
+    if (warn === null) { finish(true); return; }
+    if (r.cmd != null && !r.demo) {
+      var w = Math.round(r.cmd);
+      if (w !== r.lastSent && now - r.lastSentAt >= 2000) { sendPower(w); r.lastSent = w; r.lastSentAt = now; }
+    }
+    paint(r, warn, now);
+  }
+  function paint(r, warn, now) {
+    var pos = Core.at(r.plan, r.elapsed), target = pos.target + r.bias, next = r.plan.segs[pos.idx + 1];
+    var hrFresh = live.hr != null && now - live.hrAt < 10000 && live.hr > 30;
+    $('blockLabel').textContent = pos.seg.label;
+    $('blockCount').textContent = (pos.idx + 1) + ' of ' + r.plan.segs.length;
+    $('nextLabel').textContent = next ? 'Next: ' + next.label.toLowerCase() + ', ' + (next.from === next.to ? next.from : next.from + ' to ' + next.to) + ' bpm for ' + mmss(next.dur) : 'This is the last block';
+    $('rTarget').textContent = Math.round(target);
+    $('rBias').textContent = r.bias ? ' (you moved it ' + (r.bias > 0 ? 'up ' : 'down ') + Math.abs(r.bias) + ')' : '';
+    $('rHr').textContent = hrFresh ? live.hr : '--';
+    var d = hrFresh ? Math.round(live.hr - target) : null, el = $('rDiff'), bub = $('bub');
+    el.textContent = d == null ? ' ' : Math.abs(d) <= 1 ? 'On target' : Math.abs(d) + (d > 0 ? ' above target' : ' below target');
+    var col = d == null ? '#A8BBB1' : Math.abs(d) <= 3 ? '#9FD8B8' : d > 0 ? '#F2A07B' : '#A9C4E8';
+    el.style.color = col; bub.style.background = col;
+    bub.style.left = (50 + Math.max(-10, Math.min(10, d || 0)) * 4.6) + '%';
+    $('rPow').textContent = live.power != null && now - live.powerAt < 5000 ? live.power : '--';
+    $('rCmd').textContent = r.cmd != null ? Math.round(r.cmd) : '--';
+    $('rBlk').textContent = mmss(pos.left);
+    $('rTot').textContent = mmss(r.plan.total - r.elapsed);
+    $('rideWarn').style.display = warn ? 'block' : 'none'; $('rideWarn').textContent = warn;
+    $('rideChart').innerHTML = chartSvg(r.plan, true, r.pts, r.elapsed);
+  }
+  $('btnStart').addEventListener('click', function () {
+    if (ready()) start(false);
+    else if (!hasBt) start(true);
+    else $('btnHr').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
+  $('btnPreview').addEventListener('click', function () { if (planOk) start(true); });
+  $('btnPause').addEventListener('click', function () { if (!ride) return; ride.paused = !ride.paused; $('btnPause').textContent = ride.paused ? 'Resume' : 'Pause'; tick(); });
+  $('btnSkip').addEventListener('click', function () { if (!ride) return; var pos = Core.at(ride.plan, ride.elapsed); ride.elapsed = pos.seg.end; ride.last = Date.now(); tick(); });
+  $('btnUp').addEventListener('click', function () { if (ride) { ride.bias++; ride.last = Date.now(); paint(ride, $('rideWarn').textContent, Date.now()); } });
+  $('btnDown').addEventListener('click', function () { if (ride) { ride.bias--; ride.last = Date.now(); paint(ride, $('rideWarn').textContent, Date.now()); } });
+  var endArmed = 0;
+  $('btnEnd').addEventListener('click', function () {
+    if (Date.now() - endArmed < 4000) { $('btnEnd').textContent = 'End workout'; endArmed = 0; finish(false); }
+    else { endArmed = Date.now(); $('btnEnd').textContent = 'Tap again to end'; setTimeout(function () { $('btnEnd').textContent = 'End workout'; }, 4000); }
+  });
+  $('btnBack').addEventListener('click', function () { enterBuild(); });
+
+  function enterBuild() {
+    $('wName').value = wName || '';
+    fillNumbers(); renderBlocks(); show('build');
+  }
+  if (cfg && cfg.maxHr) { cfg = deriveLimits(cfg); if (!blocks) useTemplate(1); enterBuild(); }
+  else show('welcome');
+})();
+</script>
+</body>
+</html>
