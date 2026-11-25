@@ -134,7 +134,7 @@ body.riding{background:var(--pine);color:#F3F6F2}
   <p class="lede">Set the heart rate you want for each part of a ride. Your smart trainer raises and lowers the resistance to keep you there.</p>
   <div class="ask">
     <label for="wMax">Your maximum heart rate</label>
-    <div class="mute">If you have never measured it, enter your age and we will estimate it.</div>
+    <div class="mute">The highest your heart rate can reach in an all-out effort, not the rate you plan to train at. If you have never measured it, enter your age and we will estimate it.</div>
     <div class="line"><input class="num" id="wMax" type="number" inputmode="numeric" aria-label="Maximum heart rate"> bpm <span class="mute" style="margin-left:auto">or age</span> <input class="num" id="wAge" type="number" inputmode="numeric" aria-label="Age"></div>
   </div>
   <div class="ask">
@@ -397,6 +397,11 @@ if (typeof module !== 'undefined') module.exports = Core;
     $(id).addEventListener('input', function () {
       var n = parseFloat($(id).value);
       if (!(isFinite(n) && n > 0)) return;
+      if (id === 'cMaxHr') {
+        if (n < 100 || n > 230) return;
+        // The ceiling follows the maximum unless the rider set their own.
+        if (cfg.ceil === Math.round(cfg.maxHr * 0.95)) { cfg.ceil = Math.round(n * 0.95); $('cCeil').value = cfg.ceil; }
+      }
       cfg[cfgMap[id]] = n;
       if (id === 'cFtp') cfg.ftpKnown = true;
       save('atl.cfg', cfg); fillNumbers_summaryOnly(); drawPlan();
